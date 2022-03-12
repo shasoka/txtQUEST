@@ -62,7 +62,6 @@ def text_generating(model, char_int, int_char, start_text=' ', prediction_len=20
     :param temp: коэффициент случайности следующего символа
     :return: сгенерированный текст
     """
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     hidden = model.init_hidden()
     int_input = [char_int[char] for char in start_text]
     train = torch.LongTensor(int_input).view(-1, 1, 1).to(device)
@@ -81,3 +80,42 @@ def text_generating(model, char_int, int_char, start_text=' ', prediction_len=20
         predicted_char = int_char[top_index]
         predicted_text += predicted_char
     return predicted_text
+
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+
+class ClassLTSM(torch.nn.Module):
+    """
+    Класс нейронной сети
+    """
+
+    def __init__(self, input_size, hidden_size, embedding_size, n_layers=1):
+        """
+        Инициализация аргументов
+        :param input_size: размер входных данных
+        :param hidden_size: сложность сети (данные, недоступные для слоя)
+        :param embedding_size: длина числовых векторов
+        :param n_layers: сложность сети (слои)
+        """
+        super(ClassLTSM, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.embedding_size = embedding_size
+        self.n_layers = n_layers
+
+        self.encoder = torch.nn.Embedding(self.input_size, self.embedding_size)
+        self.lstm = torch.nn.LSTM(self.embedding_size, self.hidden_size, self.n_layers)
+        self.dropout = torch.nn.Dropout(0.2)
+        self.fc = torch.nn.Linear(self.hidden_size, self.input_size)
+
+        def forward(self, x, hidden):
+            x = self.encoder(x).squeeze(2)
+            out, (ht1, ct1) = self.lstm(x, hidden)
+            out = self.dropout(out)
+            x = self.fc(out)
+            return x, (ht1, ct1)
+
+        def init_hidden(self, batch_size=1):
+            return (torch.zeros(self.n_layers, batch_size, self.hidden_size, requires_grad=True).to(device),
+                    torch.zeros(self.n_layers, batch_size, self.hidden_size, requires_grad=True).to(device))
