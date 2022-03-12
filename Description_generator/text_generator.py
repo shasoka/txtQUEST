@@ -51,4 +51,33 @@ def get_batch(sequence_of_chars):
     return torch.stack(trains, dim=0), torch.stack(targets, dim=0)
 
 
-get_batch(sequence)
+def text_generating(model, char_int, int_char, start_text=' ', prediction_len=200, temp=0.3):
+    """
+    Функция для формирования текста
+    :param model: модель для генерации текста
+    :param char_int: словарь для перевода из символа в число
+    :param int_char: словарь для перевода из числа в символ
+    :param start_text: начальный символ текста
+    :param prediction_len: длина генерируемой последовательности
+    :param temp: коэффициент случайности следующего символа
+    :return: сгенерированный текст
+    """
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    hidden = model.init_hidden()
+    int_input = [char_int[char] for char in start_text]
+    train = torch.LongTensor(int_input).view(-1, 1, 1).to(device)
+    predicted_text = start_text
+
+    _, hidden = model(train, hidden)
+
+    inp = train[-1].view(-1, 1, 1)
+
+    for i in range(prediction_len):
+        output, hidden = model(inp.to(device), hidden)
+        output_logits = output.cpu().data.view(-1)
+        p_next = torch.softmax(output_logits / temp, dim=-1).detach().cpu().data.numpy()
+        top_index = numpy.random.choice(len(char_int), p=p_next)
+        inp = torch.LongTensor([top_index]).view(-1, 1, 1).to(device)
+        predicted_char = int_char[top_index]
+        predicted_text += predicted_char
+    return predicted_text
