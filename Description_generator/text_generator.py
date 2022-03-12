@@ -44,17 +44,17 @@ def get_batch(sequence_of_chars):
     for _ in range(BATCH_SIZE):
         start = numpy.random.randint(0, len(sequence_of_chars) - SEQ_LEN)
         chunk = sequence_of_chars[start: start + SEQ_LEN]
-        train = torch.LongTensor(chunk[:-1]).view(-1, 1)
-        target = torch.LongTensor(chunk[1:]).view(-1, 1)
-        trains.append(train)
-        targets.append(target)
+        train_batch = torch.LongTensor(chunk[:-1]).view(-1, 1)
+        target_batch = torch.LongTensor(chunk[1:]).view(-1, 1)
+        trains.append(train_batch)
+        targets.append(target_batch)
     return torch.stack(trains, dim=0), torch.stack(targets, dim=0)
 
 
-def text_generating(model, char_int, int_char, start_text=' ', prediction_len=200, temp=0.3):
+def text_generating(web_model, char_int, int_char, start_text=' ', prediction_len=200, temp=0.3):
     """
     Функция для формирования текста
-    :param model: модель для генерации текста
+    :param web_model: модель для генерации текста
     :param char_int: словарь для перевода из символа в число
     :param int_char: словарь для перевода из числа в символ
     :param start_text: начальный символ текста
@@ -62,30 +62,27 @@ def text_generating(model, char_int, int_char, start_text=' ', prediction_len=20
     :param temp: коэффициент случайности следующего символа
     :return: сгенерированный текст
     """
-    hidden = model.init_hidden()
+    hidden_part = web_model.init_hidden()
     int_input = [char_int[char] for char in start_text]
-    train = torch.LongTensor(int_input).view(-1, 1, 1).to(device)
-    predicted_text = start_text
+    train_of_chars = torch.LongTensor(int_input).view(-1, 1, 1).to(device)
+    prediction_text = start_text
 
-    _, hidden = model(train, hidden)
+    _, hidden_part = web_model(train_of_chars, hidden_part)
 
-    inp = train[-1].view(-1, 1, 1)
+    inp = train_of_chars[-1].view(-1, 1, 1)
 
     for i in range(prediction_len):
-        output, hidden = model(inp.to(device), hidden)
-        output_logits = output.cpu().data.view(-1)
+        outputting, hidden_part = web_model(inp.to(device), hidden_part)
+        output_logits = outputting.cpu().data.view(-1)
         p_next = torch.softmax(output_logits / temp, dim=-1).detach().cpu().data.numpy()
         top_index = numpy.random.choice(len(char_int), p=p_next)
         inp = torch.LongTensor([top_index]).view(-1, 1, 1).to(device)
         predicted_char = int_char[top_index]
-        predicted_text += predicted_char
-    return predicted_text
+        prediction_text += predicted_char
+    return prediction_text
 
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-
-class ClassLTSM(torch.nn.Module):
+class LTSM(torch.nn.Module):
     """
     Класс нейронной сети
     """
@@ -98,7 +95,7 @@ class ClassLTSM(torch.nn.Module):
         :param embedding_size: длина числовых векторов
         :param n_layers: сложность сети (слои)
         """
-        super(ClassLTSM, self).__init__()
+        super(LTSM, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.embedding_size = embedding_size
@@ -109,13 +106,57 @@ class ClassLTSM(torch.nn.Module):
         self.dropout = torch.nn.Dropout(0.2)
         self.fc = torch.nn.Linear(self.hidden_size, self.input_size)
 
-        def forward(self, x, hidden):
-            x = self.encoder(x).squeeze(2)
-            out, (ht1, ct1) = self.lstm(x, hidden)
-            out = self.dropout(out)
-            x = self.fc(out)
-            return x, (ht1, ct1)
+    def forward(self, x, hidden_part):
+        x = self.encoder(x).squeeze(2)
+        out, (ht1, ct1) = self.lstm(x, hidden_part)
+        out = self.dropout(out)
+        x = self.fc(out)
+        return x, (ht1, ct1)
 
-        def init_hidden(self, batch_size=1):
-            return (torch.zeros(self.n_layers, batch_size, self.hidden_size, requires_grad=True).to(device),
-                    torch.zeros(self.n_layers, batch_size, self.hidden_size, requires_grad=True).to(device))
+    def init_hidden(self, batch_size=1):
+        return (torch.zeros(self.n_layers, batch_size, self.hidden_size, requires_grad=True).to(device),
+                torch.zeros(self.n_layers, batch_size, self.hidden_size, requires_grad=True).to(device))
+
+
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+model = LTSM(input_size=len(int_to_char), hidden_size=128, embedding_size=128, n_layers=2)
+model.to(device)
+
+
+criterion = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, amsgrad=True)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer,
+    patience=5,
+    verbose=True,
+    factor=0.5
+)
+
+n_epochs = 100
+loss_avg = []
+print("i")
+for epoch in range(n_epochs):
+    print(epoch)
+    model.train()
+    train, target = get_batch(sequence)
+    train = train.permute(1, 0, 2).to(device)
+    target = target.permute(1, 0, 2).to(device)
+    hidden = model.init_hidden(BATCH_SIZE)
+
+    output, hidden = model(train, hidden)
+    loss = criterion(output.permute(1, 2, 0), target.squeeze(-1).permute(1, 0))
+
+    loss.backward()
+    optimizer.step()
+    optimizer.zero_grad()
+
+    loss_avg.append(loss.item())
+    if len(loss_avg) >= 50:
+        mean_loss = numpy.mean(loss_avg)
+        print(f'Loss: {mean_loss}')
+        scheduler.step(mean_loss)
+        loss_avg = []
+        model.eval()
+        predicted_text = text_generating(model, char_to_int, int_to_char)
+        print(predicted_text)
+print("r")
