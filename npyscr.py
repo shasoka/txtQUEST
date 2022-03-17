@@ -120,6 +120,7 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
 
 
 if __name__ == '__main__':
+
     windll.kernel32.SetConsoleTitleW("XPAM")
 
     x = (windll.user32.GetSystemMetrics(0)) // 5
