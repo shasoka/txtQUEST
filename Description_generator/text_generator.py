@@ -3,6 +3,7 @@ import numpy
 import torch
 import pickle
 
+
 def sequence_create(raw_text):
     """
     Функция для подготовки данных
@@ -44,7 +45,7 @@ def get_batch(sequence_of_chars):
     return torch.stack(trains, dim=0), torch.stack(targets, dim=0)
 
 
-def text_generating(web_model, char_int, int_char, start_text=' ', prediction_len=200, temp=0.5):
+def text_generating(web_model, char_int, int_char, start_text='', prediction_len=200, temp=0.5):
     """
     Функция для формирования текста
     :param web_model: модель для генерации текста
@@ -64,14 +65,21 @@ def text_generating(web_model, char_int, int_char, start_text=' ', prediction_le
 
     inp = train_of_chars[-1].view(-1, 1, 1)
 
-    for i in range(prediction_len):
+    i = 0
+    predicted_char = ""
+    n = True
+    while i < prediction_len or (predicted_char not in ['.', '!', '?']) or n:
         outputting, hidden_part = web_model(inp.to(device), hidden_part)
         output_logits = outputting.cpu().data.view(-1)
         p_next = torch.softmax(output_logits / temp, dim=-1).detach().cpu().data.numpy()
         top_index = numpy.random.choice(len(char_int), p=p_next)
         inp = torch.LongTensor([top_index]).view(-1, 1, 1).to(device)
         predicted_char = int_char[top_index]
-        prediction_text += predicted_char
+        if predicted_char.isupper():
+            n = False
+        if not n:
+            prediction_text += predicted_char
+            i += 1
     return prediction_text
 
 
@@ -107,13 +115,11 @@ class LTSM(torch.nn.Module):
         return x, (ht1, ct1)
 
     def init_hidden(self, batch_size=1):
-
         return (torch.zeros(self.n_layers, batch_size, self.hidden_size, requires_grad=True).to(device),
                 torch.zeros(self.n_layers, batch_size, self.hidden_size, requires_grad=True).to(device))
 
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
 
 if __name__ == "__main__":
     continue_flag = 1
