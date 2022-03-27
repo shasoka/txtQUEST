@@ -62,7 +62,7 @@ class Inventory(npyscreen.BoxTitle):
     Правый блок инвентаря.
     """
 
-    _contained_widget = npyscreen.MultiLine
+    _contained_widget = npyscreen.SelectOne
 
 
 class MainForm(npyscreen.FormBaseNewWithMenus):
@@ -105,9 +105,6 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
 
         y, x = self.useable_space()
 
-        slots_inv = ['1. [ П У С Т О Й  С Л О Т ]',
-                     '2. [ П У С Т О Й  С Л О Т ]',
-                     '3. [ П У С Т О Й  С Л О Т ]']
         storytelling = self.text_for_storytel(self.full_intro[self.frame])
 
         self.main_menu = self.new_menu(name=' М Е Н Ю ')
@@ -125,9 +122,26 @@ class MainForm(npyscreen.FormBaseNewWithMenus):
                                  rely=y // 2 + 3, name='Н А З А Д . . .',
                                  when_pressed_function=self.previous_frame)
 
+        slots_inv = ['[ П У С Т О Й  С Л О Т ]',
+                     '[ П У С Т О Й  С Л О Т ]',
+                     '[ П У С Т О Й  С Л О Т ]']
+
         self.inventory = self.add(Inventory, editable=True,
                                   name=' И Н В Е Н Т А Р Ь ', rely=y // 2 + 2,
-                                  relx=x // 2, values=slots_inv)
+                                  relx=x // 2, max_height=y // 2 - 5, values=slots_inv)
+
+        self.add(npyscreen.ButtonPress, rely=y - 3, relx=x // 2,
+                 name='И С П О Л Ь З О В А Т Ь')
+        self.add(npyscreen.Textfield, value='-:-', rely=y - 3, relx=x // 2 + 34,
+                 editable=False)
+        self.add(npyscreen.ButtonPress, rely=y - 3, relx=x - 24,
+                 name='О  П Р Е Д М Е Т Е')
+
+        self.add(npyscreen.Textfield, value='(build 1.1b)', rely=y - 3,
+                 editable=False)
+
+    def actionSelected(self, act_on_these, key_press):
+        pass
 
     def next_frame(self):
         """
