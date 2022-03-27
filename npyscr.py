@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""
+Модуль с интерфейсом для TxtRPG.
+"""
+import json
+
 import npyscreen
 import curses
 import os
@@ -7,125 +12,195 @@ from ctypes import *
 
 
 class App(npyscreen.StandardApp):
+    """
+    Класс приложения.
+    """
+
     def onStart(self):
+        """
+        Метод, свзяывающий форму с приложением.
+        """
+
         self.addForm("MAIN", MainForm, name=" Х Р А М ")
 
 
 class DefaultTheme(npyscreen.ThemeManager):
+    """
+    Класс ч/б темы.
+    """
+
     default_colors = {
-        'DEFAULT'     : 'WHITE_BLACK',
-        'FORMDEFAULT' : 'WHITE_BLACK',
-        'NO_EDIT'     : 'WHITE_BLACK',
-        'STANDOUT'    : 'WHITE_BLACK',
-        'CURSOR'      : 'WHITE_BLACK',
+        'DEFAULT': 'WHITE_BLACK',
+        'FORMDEFAULT': 'WHITE_BLACK',
+        'NO_EDIT': 'WHITE_BLACK',
+        'STANDOUT': 'WHITE_BLACK',
+        'CURSOR': 'WHITE_BLACK',
         'CURSOR_INVERSE': 'BLACK_WHITE',
-        'LABEL'       : 'WHITE_BLACK',
-        'LABELBOLD'   : 'WHITE_BLACK',
-        'CONTROL'     : 'WHITE_BLACK',
-        'WARNING'     : 'WHITE_BLACK',
-        'CRITICAL'    : 'WHITE_BLACK',
-        'GOOD'        : 'WHITE_BLACK',
-        'GOODHL'      : 'WHITE_BLACK',
-        'VERYGOOD'    : 'WHITE_BLACK',
-        'CAUTION'     : 'WHITE_BLACK',
-        'CAUTIONHL'   : 'WHITE_BLACK',
+        'LABEL': 'WHITE_BLACK',
+        'LABELBOLD': 'WHITE_BLACK',
+        'CONTROL': 'WHITE_BLACK',
+        'WARNING': 'WHITE_BLACK',
+        'CRITICAL': 'WHITE_BLACK',
+        'GOOD': 'WHITE_BLACK',
+        'GOODHL': 'WHITE_BLACK',
+        'VERYGOOD': 'WHITE_BLACK',
+        'CAUTION': 'WHITE_BLACK',
+        'CAUTIONHL': 'WHITE_BLACK',
     }
 
 
 class Speaker(npyscreen.BoxTitle):
+    """
+    Основное окно вывода текста.
+    """
+
     _contained_widget = npyscreen.MultiLineEdit
 
 
 class Inventory(npyscreen.BoxTitle):
+    """
+    Правый блок инвентаря.
+    """
+
     _contained_widget = npyscreen.MultiLine
 
 
 class MainForm(npyscreen.FormBaseNewWithMenus):
+    """
+    Класс основной формы.
+    """
 
-    def __init__(self, name=None, parentApp=None, framed=None, help=None,
-                 color='FORMDEFAULT',
-                 widget_list=None, cycle_widgets=False, *args, **keywords):
+    frame = 0
+    with open("intro.json", "r") as file:
+        full_intro = json.load(file)
+
+    def __init__(self, name=None, parentApp=None, framed=None, help=None,  # Добавить хелп
+                 color='FORMDEFAULT', widget_list=None, cycle_widgets=False,
+                 *args, **keywords):
         super().__init__(name, parentApp, framed, help, color, widget_list,
                          cycle_widgets, args, keywords)
-        self.main_menu = None
-        self.speaker = None
-        self.actions = None
-        self.inventory = None
 
     def draw_form(self):
+        """
+        Метод, отрисовывающий меню по ^X.
+        """
+
         super(npyscreen.FormBaseNewWithMenus, self).draw_form()
         menu_advert = " " + self.__class__.MENU_KEY + ": М Е Н Ю "
         if isinstance(menu_advert, bytes):
             menu_advert = menu_advert.decode('utf-8', 'replace')
-        y, x = self.display_menu_advert_at()
-        self.add_line(y, x,
+        yd, xd = self.display_menu_advert_at()
+        self.add_line(yd, xd,
                       menu_advert,
                       self.make_attributes_list(menu_advert, curses.A_NORMAL),
-                      self.columns - x - 1
+                      self.columns - xd - 1
                       )
 
     def create(self):
+        """
+        Метод, отрисовывающий всю форму.
+        """
+
         npyscreen.setTheme(DefaultTheme)
 
         y, x = self.useable_space()
 
-        slots_action = ["1. ...", "2. ...", "3. ..."]
-        slots_inv = ['1. ФОНАРЬ', '2. ...']
-        storytelling = self.text_for_storytel()
+        slots_inv = ['1. [ П У С Т О Й  С Л О Т ]',
+                     '2. [ П У С Т О Й  С Л О Т ]',
+                     '3. [ П У С Т О Й  С Л О Т ]']
+        storytelling = self.text_for_storytel(self.full_intro[self.frame])
 
         self.main_menu = self.new_menu(name=' М Е Н Ю ')
-        self.main_menu.addItem(text=' СОХРАНИТЬ И ВЫЙТИ', onSelect=self.main_menu_save_exit)
+        self.main_menu.addItem(text=' СОХРАНИТЬ И ВЫЙТИ',
+                               onSelect=self.main_menu_save_exit)
         self.main_menu.addItem(text=' ВЫЙТИ', onSelect=self.main_menu_exit)
 
-        self.speaker = self.add(Speaker, editable=False, max_height=y//2+1, rely=1, value=storytelling)
+        self.speaker = self.add(Speaker, editable=False, max_height=y // 2 + 1,
+                                rely=1, value=storytelling)
 
-        self.actions = self.add(npyscreen.SelectOne, editable=True, max_width=x//2-5, rely=y//2+2, values=slots_action)
+        self.action_1 = self.add(npyscreen.ButtonPress, max_width=x // 2 - 5,
+                                 rely=y // 2 + 2, name='Д А Л Е Е . . .',
+                                 when_pressed_function=self.next_frame)
+        self.action_2 = self.add(npyscreen.ButtonPress, max_width=x // 2 - 5,
+                                 rely=y // 2 + 3, name='Н А З А Д . . .',
+                                 when_pressed_function=self.previous_frame)
 
-        self.inventory = self.add(Inventory, editable=True, name=' И Н В Е Н Т А Р Ь ', rely=y//2+2, relx=x//2, values=slots_inv)
+        self.inventory = self.add(Inventory, editable=True,
+                                  name=' И Н В Е Н Т А Р Ь ', rely=y // 2 + 2,
+                                  relx=x // 2, values=slots_inv)
 
-        # slots = ['+']  # Обновление checkbox'а
-        # self.Inventory.display()
-        # self.Inventory = self.add(npyscreen.TitleSelectOne, editable=True,
-        #                           max_width=x // 2 - 5, rely=27, values=slots,
-        #                           name=" М Е Н Ю ")
+    def next_frame(self):
+        """
+        Вывод следующего кадра.
+        """
 
-    # def event_value_edited(self, event):  # Очистка спикера
-    #     self.InputBox2.value = self.InputBox1.value
-    #     self.InputBox2.display()
+        if self.frame < 4:
+            self.frame += 1
+            storytelling = self.text_for_storytel(self.full_intro[self.frame])
+            self.speaker.value = storytelling
+            self.speaker.display()
+        else:
+            pass
+
+    def previous_frame(self):
+        """
+        Вывод предыдущего кадра.
+        """
+
+        if self.frame > 0:
+            self.frame -= 1
+            storytelling = self.text_for_storytel(self.full_intro[self.frame])
+            self.speaker.value = storytelling
+            self.speaker.display()
+        else:
+            pass
 
     @staticmethod
-    def text_for_storytel():
-        paragraph = 'Двадцатого августа 1917 года я, Карл-Хайнрих, граф фон Альтберг-Эренштейн, командор-лейтенант имперского военного флота, передаю эту бутылку и записи Атлантическому океану в месте, неизвестном мне: вероятно, это 20 градусов северной широты и 35 градусов восточной долготы, где мой корабль беспомощно лежит на океанском дне. Поступаю так в силу моего желания предать гласности некоторые необычные факты: нет вероятности, что я выживу и смогу рассказать об этом сам, потому что окружающие обстоятельства настолько же необычайны, насколько угрожающи, и включают в себя не только безнадежное повреждение У-29, но и совершенно разрушительное ослабление моей немецкой железной воли.'
-        l = 0
+    def text_for_storytel(paragraph):
+        """
+        Возвращает подготовленную к выводу в MultiLineEdit строку.
+        """
+
+        k = 0
         for i in range(len(paragraph)):
-            l += 1
+            k += 1
+            if paragraph[i] == '\n':
+                k = 0
             if paragraph[i] == ' ':
-                for j in range(i+1, len(paragraph)):
+                for j in range(i + 1, len(paragraph)):
                     if paragraph[j] == ' ':
-                        if j - i - 1 + l <= 128:
+                        if j - i - 1 + k <= 128:
                             break
                         else:
-                            paragraph = paragraph[:i] + '\n' + paragraph[i + 1:]
-                            l = 0
+                            paragraph = paragraph[:i] + '\n' + \
+                                        paragraph[i + 1:]
+                            k = 0
                             break
         return paragraph
 
     @staticmethod
     def main_menu_exit():
+        """
+        Выход по кнопке из меню.
+        """
+
         exit(0)
 
     @staticmethod
     def main_menu_save_exit():
+        """
+        Выход с сохранением по кнопке из меню.
+        """
+
         pass
 
 
 if __name__ == '__main__':
-
     windll.kernel32.SetConsoleTitleW("XPAM")
 
-    x = (windll.user32.GetSystemMetrics(0)) // 5
-    y = (windll.user32.GetSystemMetrics(1)) // 5
-    os.system('mode con cols=' + str(x) + ' lines=' + str(y))
+    window_x = (windll.user32.GetSystemMetrics(0)) // 5
+    window_y = (windll.user32.GetSystemMetrics(1)) // 5
+    os.system('mode con cols=' + str(window_x) + ' lines=' + str(window_y))
 
     MyApp = App()
     MyApp.run()
