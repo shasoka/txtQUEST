@@ -2,7 +2,7 @@ class MainHero:
     coordinates = [5, 0]
 
     def __init__(self):
-        pass
+        self.mind = 100
 
     def move(self, command):
 
