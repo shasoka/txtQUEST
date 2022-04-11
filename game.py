@@ -33,7 +33,7 @@ def mind_output(mind):
 
 def show_items(items_dict):
     for thing, num in items_dict.items():
-        if thing != "map" and thing != "statue" and num[0] != 0:
+        if num:
             print(thing, ": ", num, sep="")
 
 
@@ -47,11 +47,11 @@ def find_items(items_dict):
 
 
 def take_item(name):
-    if name in hero.items and name in map_of_world[hero.coordinates[0]][hero.coordinates[1]]:
+    if name in hero.items and name in map_of_world[hero.coordinates[0]][hero.coordinates[1]]["items"]:
         hero.items[name] += 1
     elif name in map_of_world[hero.coordinates[0]][hero.coordinates[1]]:
         hero.items[name] = 1
-    map_of_world[hero.coordinates[0]][hero.coordinates[1]][name][0] -= 1
+    map_of_world[hero.coordinates[0]][hero.coordinates[1]]["items"][name] -= 1
 
 
 def show_inventory(inventory):
@@ -77,7 +77,7 @@ while (n := str(input())) != '0':
     if n in ["up", "down", "right", "left"]:
         commands["move"](n)
     elif n == "items":
-        commands[n](map_of_world[hero.coordinates[0]][hero.coordinates[1]])
+        commands[n](map_of_world[hero.coordinates[0]][hero.coordinates[1]]["items"])
         take_item(n := str(input()))
         continue
     elif n == "show":

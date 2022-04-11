@@ -19,5 +19,5 @@ class MainHero:
             self.coordinates[0] += 1
         if self.items["light"] != 0:
             self.items["light"] -= 1
-        elif random.randint(0, 100) > 80:
+        elif random.randint(0, 100) > 90:
             self.mind -= 10

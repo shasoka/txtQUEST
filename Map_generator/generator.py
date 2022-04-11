@@ -28,8 +28,11 @@ for x in range(10):
                                                        temp=0.5,
                                                        prediction_len=150,
                                                        start_text=" " + random.choice(alphabet))[2:],
-                                "light": random.choices([0, 1], weights=[80, 20]),
-                                "statue": 0})
+                                "statue": 0,
+                                "items": {
+                                    "light": random.choices([0, 1], weights=[80, 20])[0],
+                                         }
+                                })
 
 
 n = random.randint(0, 9)
@@ -39,7 +42,7 @@ e = random.randint(0, 9)
 print(n, m, q, e)
 
 
-map_of_world[5][1]["figure"] = [1]
+map_of_world[5][1]["items"]["figure"] = 1
 map_of_world[5][2]["statue"] = 1
 
 # Сохранение в формате json
