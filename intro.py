@@ -30,6 +30,8 @@ def main_scr(screen):
                     Screen.COLOUR_WHITE, Screen.A_BOLD)
     screen.refresh()
     time.sleep(3)
+    screen.clear()
+    screen.refresh
 
     effects = [
         Print(
