@@ -19,19 +19,18 @@ def main_scr(screen):
     screen.height = 40
     screen.width = 137
 
-    screen.print_at(u'Нажмите "X", чтобы продолжить . . .',
-                    screen.width // 2 - 17, screen.height // 2 - 5,
-                    Screen.COLOUR_WHITE, Screen.A_BOLD)
-    screen.refresh()
-    time.sleep(2)
-
     screen.print_at(u'По мотивам книги "Храм" Говарда Лавкрафта . . .',
                     screen.width // 2 - 23, screen.height // 2 - 5,
                     Screen.COLOUR_WHITE, Screen.A_BOLD)
     screen.refresh()
     time.sleep(3)
     screen.clear()
-    screen.refresh
+
+    screen.print_at(u'Нажмите "X", чтобы продолжить . . .',
+                    screen.width // 2 - 17, screen.height // 2 - 5,
+                    Screen.COLOUR_WHITE, Screen.A_BOLD)
+    screen.refresh()
+    time.sleep(1.5)
 
     effects = [
         Print(

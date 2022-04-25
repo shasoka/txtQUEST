@@ -2,8 +2,9 @@ from main_hero_class import MainHero
 import json
 
 
-with open("Map_generator/map.json", "r", encoding="UTF-8") as f:
+with open("../map_generator/map.json", "r", encoding="UTF-8") as f:
     map_of_world = json.load(f)
+
 
 def description_output(coordinates, mind):
     import random
@@ -63,6 +64,7 @@ def show_inventory(inventory):
 if __name__ == '__main__':
 
     hero = MainHero()
+    print(map_of_world)
 
     commands = {
         "move": hero.move,
