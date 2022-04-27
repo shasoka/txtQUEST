@@ -2,9 +2,9 @@ import random
 
 
 class MainHero:
-    coordinates = [5, 0]
 
     def __init__(self):
+        self.coordinates = [5, 0]
         self.mind = 100
         self.items = {"light": 0, "figure": 0}  # Текущее состояние инвентаря
 
