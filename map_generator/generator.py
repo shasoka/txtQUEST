@@ -1,3 +1,7 @@
+"""
+Модуль, генерирующий карту
+"""
+
 import torch
 import pickle
 import random
@@ -7,8 +11,7 @@ from Description_generator.text_generator import LTSM
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-"""Загрузка модели и данных для генерации текста"""
-with open('../Description_generator/char_to_idx.pickle', 'rb') as f:
+with open('../Description_generator/char_to_idx.pickle', 'rb') as f:  # Загрузка модели и данных для генерации текста
     char_to_int = pickle.load(f)
 with open('../Description_generator/idx_to_char.pickle', 'rb') as f:
     int_to_char = pickle.load(f)
@@ -18,8 +21,7 @@ model.load_state_dict(torch.load("../Description_generator/entire_model.pt"))
 alphabet = "абвгдежзийклмнопрстуфхцчшщыэюя"  # Начала строк для генерации текста
 map_of_world = []  # Словарь для описаний локаций по координатам
 
-# Заполнение словаря описаниями
-for x in range(10):
+for x in range(10):  # Заполнение словаря описаниями
     map_of_world.append([])
     for y in range(10):
         map_of_world[x].append({"map": text_generating(model,
@@ -41,10 +43,10 @@ q = random.randint(0, 9)
 e = random.randint(0, 9)
 print(n, m, q, e)
 
+map_of_world[5][2]["items"]["figure"] = 1
+map_of_world[5][3]["items"]["dust"] = 1
+map_of_world[5][4]["statue"] = 1
+map_of_world[5][1]["wall"] = 1
 
-map_of_world[5][1]["items"]["figure"] = 1
-map_of_world[5][2]["statue"] = 1
-
-# Сохранение в формате json
-with open("map.json", 'w') as file:
+with open("map.json", 'w') as file:  # Сохранение в формате json
     json.dump(map_of_world, file)

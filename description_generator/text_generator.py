@@ -1,3 +1,7 @@
+"""
+Модуль нейронной сети, генерирующей текстовые описания.
+"""
+
 from collections import Counter
 import numpy
 import torch
@@ -6,13 +10,16 @@ import pickle
 
 def sequence_create(raw_text):
     """
-    Функция для подготовки данных
-    :param raw_text: исходный текст
+    Функция для подготовки данных.
+
+    :param raw_text: исходный текст.
+
     :return:
-        sequence: текст в индексах символов
-        char_to_int: словарь для перевода из символа в число
-        int_to_char: словарь для перевода из числа в символ
+        sequence: текст в индексах символов;
+        char_to_int: словарь для перевода из символа в число;
+        int_to_char: словарь для перевода из числа в символ.
     """
+
     counts_of_chars = Counter(raw_text)
     counts_of_chars = sorted(counts_of_chars.items(), key=lambda x: x[1], reverse=True)
     sorted_chars = [char for char, _ in counts_of_chars]
@@ -29,9 +36,11 @@ BATCH_SIZE = 10
 
 def get_batch(sequence_of_chars):
     """
-    Функция для формирования батчей
-    :param sequence_of_chars: послдовательность символов
-    :return: наборы для обучения (значение для передачи и ожидаемые результаты)
+    Функция для формирования батчей.
+
+    :param sequence_of_chars: послдовательность символов.
+
+    :return: наборы для обучения (значение для передачи и ожидаемые результаты).
     """
     trains = []
     targets = []
@@ -47,15 +56,18 @@ def get_batch(sequence_of_chars):
 
 def text_generating(web_model, char_int, int_char, start_text='', prediction_len=200, temp=0.5):
     """
-    Функция для формирования текста
-    :param web_model: модель для генерации текста
-    :param char_int: словарь для перевода из символа в число
-    :param int_char: словарь для перевода из числа в символ
-    :param start_text: начальный символ текста
-    :param prediction_len: длина генерируемой последовательности
-    :param temp: коэффициент случайности следующего символа
-    :return: сгенерированный текст
+    Функция для формирования текста.
+
+    :param web_model: модель для генерации текста;
+    :param char_int: словарь для перевода из символа в число;
+    :param int_char: словарь для перевода из числа в символ;
+    :param start_text: начальный символ текста;
+    :param prediction_len: длина генерируемой последовательности;
+    :param temp: коэффициент случайности следующего символа.
+
+    :return: сгенерированный текст.
     """
+
     hidden_part = web_model.init_hidden()
     int_input = [char_int[char] for char in start_text]
     train_of_chars = torch.LongTensor(int_input).view(-1, 1, 1).to(device)
@@ -85,17 +97,19 @@ def text_generating(web_model, char_int, int_char, start_text='', prediction_len
 
 class LTSM(torch.nn.Module):
     """
-    Класс нейронной сети
+    Класс нейронной сети.
     """
 
     def __init__(self, input_size, hidden_size, embedding_size, n_layers=1):
         """
-        Инициализация аргументов
-        :param input_size: размер входных данных
-        :param hidden_size: сложность сети (данные, недоступные для слоя)
-        :param embedding_size: длина числовых векторов
-        :param n_layers: сложность сети (слои)
+        Инициализация аргументов.
+
+        :param input_size: размер входных данных;
+        :param hidden_size: сложность сети (данные, недоступные для слоя);
+        :param embedding_size: длина числовых векторов;
+        :param n_layers: сложность сети (слои).
         """
+
         super(LTSM, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size

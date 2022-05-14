@@ -1,23 +1,32 @@
-import time
-from asciimatics.renderers import ImageFile
-from asciimatics.screen import Screen, KeyboardEvent, StopApplication
-from asciimatics.scene import Scene
-from asciimatics.effects import Print, Snow, Wipe, Stars
+"""
+Модуль с приветственным интро.
+"""
+
 import os
+import time
 from ctypes import *
+
+from asciimatics.effects import Print, Snow, Wipe, Stars
+from asciimatics.renderers import ImageFile
+from asciimatics.scene import Scene
+from asciimatics.screen import Screen, KeyboardEvent, StopApplication
 
 
 def stop_key(event):
+    """
+    Обработчик нажатия X для выхода из интро.
+    """
+
     if isinstance(event, KeyboardEvent):
         c = event.key_code
         if c in (ord("X"), ord("x"), ord("ч"), ord("Ч")):
-            raise StopApplication("Intro closed")
+            raise StopApplication("INTRO CLOSED. MAIN WINDOW WILL BE OPENED INSTEAD.")
 
 
 def main_scr(screen):
-    screen.set_title('XPAM')
-    screen.height = 40
-    screen.width = 137
+    """
+    Функция, передаваемая в wrapper. Поочередно выводит надписи и анимации.
+    """
 
     screen.print_at(u'По мотивам книги "Храм" Говарда Лавкрафта . . .',
                     screen.width // 2 - 23, screen.height // 2 - 5,
@@ -26,11 +35,10 @@ def main_scr(screen):
     time.sleep(3)
     screen.clear()
 
-    screen.print_at(u'Нажмите "X", чтобы продолжить . . .',
-                    screen.width // 2 - 17, screen.height // 2 - 5,
-                    Screen.COLOUR_WHITE, Screen.A_BOLD)
+    screen.print_at(u'Нажмите "X", чтобы продолжить . . .', screen.width // 2 - 17, screen.height // 2 - 5, Screen.COLOUR_WHITE, Screen.A_BOLD)
     screen.refresh()
-    time.sleep(1.5)
+    time.sleep(2)
+    screen.clear()
 
     effects = [
         Print(
