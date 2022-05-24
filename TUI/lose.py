@@ -1,12 +1,12 @@
 """
-Модуль с приветственным интро.
+Модуль с анимацией при проигрыше.
 """
 
 import os
 import time
 from ctypes import *
 
-from asciimatics.effects import Print, Snow, Wipe, Stars
+from asciimatics.effects import Print, Snow, Wipe
 from asciimatics.renderers import ImageFile
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen, KeyboardEvent, StopApplication
@@ -28,14 +28,7 @@ def main_scr(screen):
     Функция, передаваемая в wrapper. Поочередно выводит надписи и анимации.
     """
 
-    screen.print_at(u'По мотивам книги "Храм" Говарда Лавкрафта . . .',
-                    screen.width // 2 - 23, screen.height // 2 - 5,
-                    Screen.COLOUR_WHITE, Screen.A_BOLD)
-    screen.refresh()
-    time.sleep(3)
-    screen.clear()
-
-    screen.print_at(u'Нажмите "X", чтобы продолжить . . .', screen.width // 2 - 17, screen.height // 2 - 5, Screen.COLOUR_WHITE, Screen.A_BOLD)
+    screen.print_at(u'Нажмите "X", чтобы вернуться в меню . . .', screen.width // 2 - 20, screen.height // 2 - 5, Screen.COLOUR_WHITE, Screen.A_BOLD)
     screen.refresh()
     time.sleep(2)
     screen.clear()
@@ -43,11 +36,10 @@ def main_scr(screen):
     effects = [
         Print(
             screen,
-            ImageFile("intro.jpg", height=40),
-            screen.height // 2 - 20),
-        Wipe(screen),
+            ImageFile("lose.jpg", height=20),
+            screen.height // 2 - 10),
         Snow(screen),
-        Stars(screen, count=100)
+        Wipe(screen)
     ]
 
     screen.play([Scene(effects, 500)], unhandled_input=stop_key)

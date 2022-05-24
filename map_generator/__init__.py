@@ -2,5 +2,5 @@
 Пакет генератора карты.
 
 Модули:
-    - generator.py
+    - map_generator.py
 """

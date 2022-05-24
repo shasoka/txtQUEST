@@ -2,6 +2,7 @@
 
 """
 TUI для TxtRPG Храм.
+Точка входа всего проекта.
 """
 
 import curses
@@ -12,6 +13,7 @@ import pickle
 import random
 import subprocess
 import sys
+import time
 from ctypes import *
 
 import keyboard
@@ -21,7 +23,7 @@ import py_win_keyboard_layout
 
 import main_hero_class
 import quests
-from game import load_map, description_output
+from map_output import load_map, description_output
 from words import word_guess, word_make
 
 
@@ -59,8 +61,6 @@ class SaveSystem:
 
         cls.new_save = True
         cls.f_name = 'SAVE ' + str(datetime.datetime.now())[:-7].replace(':', '-', 3) + '.dat'
-        with open(fr'saves\{SaveSystem.f_name}', 'wb') as f:
-            pass
 
     @classmethod
     def save_existing(cls, data: dict):
@@ -80,9 +80,10 @@ class SaveSystem:
         Удаление файла в случае не сохранения новой игры.
         """
 
-        os.remove(f'saves/{cls.f_name}')
-        cls.f_name = None
-        cls.new_save = False
+        if not cls.new_save:
+            os.remove(f'saves/{cls.f_name}')
+            cls.f_name = None
+            cls.new_save = False
 
     @classmethod
     def load(cls, f_name):
@@ -91,6 +92,7 @@ class SaveSystem:
         """
 
         cls.f_name = f_name + '.dat'
+        cls.new_save = False
         with open(fr'saves\{cls.f_name}', 'rb') as f:
             cls.loaded_data = pickle.load(f)
 
@@ -154,8 +156,7 @@ class Speaker(npyscreen.BoxTitle):
                         if j - i - 1 + k <= max_len:
                             break
                         else:
-                            paragraph = paragraph[:i] + '\n' + \
-                                        paragraph[i + 1:]
+                            paragraph = paragraph[:i] + '\n' + paragraph[i + 1:]
                             k = 0
                             break
         return paragraph
@@ -166,7 +167,8 @@ class WelcomeForm(npyscreen.FormBaseNew):
     Класс основной формы.
     """
 
-    helpstr = '    Разработано по мотивам книги "Храм" Говарда Лавкрафта.\n    Ну потом когда-нибудь напишу, мне лень...\n    Два хита по ентеру чтобы вернуться'
+    with open('helpstr.json', 'r') as file:
+        helpstr = json.load(file)
 
     def __init__(self, name=' Х Р А М ', parentApp=App, framed=None,
                  help=helpstr,
@@ -174,7 +176,7 @@ class WelcomeForm(npyscreen.FormBaseNew):
                  *args, **keywords):
         super().__init__(name, parentApp, framed, help, color, widget_list, cycle_widgets, args, keywords)
 
-        self.NEW_GAME_FLAG = 0
+        self.NEW_GAME_FLAG = 0  # На случай открытия справки при входе в новую игру
         self.handlers.pop("^O")
         self.handlers.pop("^L")
 
@@ -235,7 +237,7 @@ class WelcomeForm(npyscreen.FormBaseNew):
         self.action_delete_selection = self.add(npyscreen.ButtonPress, relx=(x - 28 - 9 // 2) // 2, rely=y // 2 + 9, name=28 * ' ', editable=False, when_pressed_function=(lambda: self.delete_save(self.saves_picker.value)))
         self.action_cancel_selection = self.add(npyscreen.ButtonPress, relx=(x - 28 - 9 // 2) // 2, rely=y // 2 + 10, name=28 * ' ', editable=False, when_pressed_function=self.cancel)
 
-        self.add(npyscreen.Textfield, value='(build 2.0b)', rely=y - 3, editable=False)
+        self.add(npyscreen.Textfield, value='(build 3.0b)', rely=y - 3, editable=False)
 
     def new_game(self):
         """
@@ -425,7 +427,20 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
 
     hero = main_hero_class.MainHero()
     map_of_world = load_map()
-    quests_dict = dict((k, v) for k, v in quests.quests_dict.items())
+    quests_dict = {
+        "wall": {
+            "text": "На стене виднеются углубления похожие на надпись. Вокруг слишком темно, света не хватает, чтобы разобрать написанное.",
+            "quest": "Найдите способ прочесть надпись и вернитесь к резной стене. \nНе заблудитесь в пути...",
+            "func": quests.wall_quest_meeting,
+            "complete": False},
+        "statue": {
+            "text": "...едва уцелевший одинокий постамент. Возможно, Вам удастся наконец найти свое спасение!",
+            "quest": "Найдите статуэтку и вознесите ее к алтарю.",
+            "func": quests.statue_quest_meeting,
+            "complete": False},
+        "end": {
+            "quest": "Ваши муки окончены.\nА может... это было страшным сном?"}
+    }
 
     frame = 0
     LUMEN_FLAG = 0
@@ -451,8 +466,8 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
 
         self.handlers.pop("^O")
         self.handlers.pop("^L")
-        self.add_handlers({ord('Ц'): self.prologue_next_frame, ord('ц'): self.prologue_next_frame,
-                           ord('Ы'): self.prologue_previous_frame, ord('ы'): self.prologue_previous_frame})
+        self.add_handlers({ord('Ч'): self.prologue_next_frame, ord('ч'): self.prologue_next_frame,
+                           ord('Я'): self.prologue_previous_frame, ord('я'): self.prologue_previous_frame})
 
     def draw_form(self):
         """
@@ -527,10 +542,12 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         self.main_menu.addItem(text=' СОХРАНИТЬ И ПОКИНУТЬ ХРАМ ', onSelect=self.exit_save)
         self.main_menu.addItem(text=' ПОКИНУТЬ ХРАМ             ', onSelect=self.exit_no_save)
 
+        Speaker._contained_widget = npyscreen.Textfield  # Изменение виджета спикера для того, чтобы игрок по нажатию Enter падал на кнопку ввода во время головоломки со словами
         self.word_guesser = self.add(Speaker, color='STANDOUT', scroll_exit=True, exit_right=True, exit_left=True, rely=y // 2 + 5, relx=(x - 22) // 2 + 1, max_width=19, max_height=3, name=' ↓ ↓ ↓ ↓ ', hidden=True, editable=False)
+        Speaker._contained_widget = npyscreen.MultiLineEdit
         self.action_enter = self.add(npyscreen.ButtonPress, rely=y // 2 + 8, relx=(x - 22) // 2 + 1, name=15 * ' ', editable=False, when_pressed_function=(lambda: self.enter(self.word_and_ans)))
         self.speaker = self.add(Speaker, editable=False, max_height=y // 2 + 1, rely=1)
-        self.action_forward = self.add(npyscreen.ButtonPress, rely=y // 2 + 2, name='(W) В П Е Р Е Д')
+        self.action_forward = self.add(npyscreen.ButtonPress, rely=y // 2 + 2, name='(X) В П Е Р Е Д')
         self.action_backward = self.add(npyscreen.ButtonPress, rely=y // 2 + 3, name=15 * ' ', editable=False)
         self.action_right = self.add(npyscreen.ButtonPress, rely=y // 2 + 4, name=15 * ' ', editable=False)
         self.action_left = self.add(npyscreen.ButtonPress, rely=y // 2 + 5, name=15 * ' ', editable=False)
@@ -542,7 +559,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         self.mind = self.add(npyscreen.Slider, editable=False, lowest=0, step=1, block_color='CAUTIONHL', rely=y - 5)
 
         self.add(npyscreen.Textfield, value='ШКАЛА РАССУДКА', rely=y - 7, editable=False)
-        self.add(npyscreen.Textfield, value='(build 2.0b)', rely=y - 3, editable=False)
+        self.add(npyscreen.Textfield, value='(build 3.0b)', rely=y - 3, editable=False)
 
         if SaveSystem.new_save:  # Шаблон для новой игры
             self.speaker.value = Speaker.text_for_storytel(GameForm.full_intro[self.frame], 127)
@@ -553,16 +570,25 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
             self.inventory.values = GameForm.slots_inv_default
             self.inventory.footer = ' С Л О Т О В : 0 / 5 '
             self.mind.value = self.hero.mind
+
         else:  # Данные из сохранения
-            map_of_world = SaveSystem.loaded_data['map']
-            self.frame = 4
-            self.prologue_next_frame()  # При значении frame = 4 данный метод переопределяет кнопки и надпись в спикере
+            self.map_of_world = SaveSystem.loaded_data['map']  # Загрузка карты
+            self.hero = SaveSystem.loaded_data['hero']  # Загрузка персонажа
+            self.quests_dict = SaveSystem.loaded_data['quests']  # Загрузка слоавря квестов
+            self.frame = 5
+            self.mind.value = self.hero.mind  # Обновление полосы рассудка
+            self.action_forward.when_pressed_function = (lambda eventHadled=None: self.move('up'))
+            self.action_backward.when_pressed_function = (lambda eventHandled=None: self.move('down'))
+            self.action_left.when_pressed_function = (lambda eventHandled=None: self.move('left'))
+            self.action_right.when_pressed_function = (lambda eventHandled=None: self.move('right'))
+            self.action_forward.name = '(W) В П Е Р Е Д'
+            self.action_right.name = '(D) В П Р А В О'
+            self.action_right.editable = True
+            self.action_left.name = '(A) В Л Е В О  '
+            self.action_left.editable = True
             self.action_backward.name = '(S) Н А З А Д  '
             self.action_backward.editable = True
-
-            self.hero = SaveSystem.loaded_data['hero']
-            self.mind.value = self.hero.mind
-            self.speaker.value = Speaker.text_for_storytel(description_output(self.hero, GameForm.map_of_world), 127)
+            self.speaker.value = Speaker.text_for_storytel(description_output(self.hero, self.map_of_world, self.quests_dict), 127)
             self.inventory.values = SaveSystem.loaded_data['inventory'][0]
             self.inventory.footer = SaveSystem.loaded_data['inventory'][1]
             if '×' in self.inventory.values[0]:
@@ -574,7 +600,14 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
                 self.action_collect.editable = True
                 self.action_collect.name = '     П О Д О Б Р А Т Ь   '
                 self.loc_items.editable = True
-            self.LUMEN_FLAG, self.DUST_FALG, self.FIGURE_FLAG, self.MIND_FLAG = SaveSystem.loaded_data['flags']
+            self.LUMEN_FLAG, self.DUST_FLAG, self.FIGURE_FLAG, self.MIND_FLAG = SaveSystem.loaded_data['flags']
+
+            self.quest_updater()
+
+            self.add_handlers({ord('Ц'): (lambda eventHandled=None: self.move('up')), ord('ц'): (lambda eventHandled=None: self.move('up')),
+                               ord('Ы'): (lambda eventHandled=None: self.move('down')), ord('ы'): (lambda eventHandled=None: self.move('down')),
+                               ord('Ф'): (lambda eventHandled=None: self.move('left')), ord('ф'): (lambda eventHandled=None: self.move('left')),
+                               ord('В'): (lambda eventHandled=None: self.move('right')), ord('в'): (lambda eventHandled=None: self.move('right'))})
 
     def prologue_next_frame(self, eventHandled=None):
         """
@@ -582,31 +615,35 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         """
 
         if self.frame < 4:
+
             self.frame += 1
             if self.frame > 0:
                 self.action_backward.editable = True
-                self.action_backward.name = '(S) Н А З А Д  '
+                self.action_backward.name = '(Z) Н А З А Д  '
                 self.action_backward.when_pressed_function = self.prologue_previous_frame
                 self.action_backward.display()
             self.speaker.value = Speaker.text_for_storytel(GameForm.full_intro[self.frame], 127)
             self.speaker.display()
 
         elif self.frame == 4:
+            self.frame += 1  # Увеличить кадр, чтобы избежать работу функции по бинду
 
             if SaveSystem.new_save:
                 msg = 'Вы входите в таинственный ХРАМ.\nЧт@ жд@т вас в#утри?.,.\n|\n|\n|\nНажмите ENTER, чтобы продолжить.'
                 npyscreen.notify_confirm(msg, title=' !"##@/..', editw=1, form_color='DANGER')
 
-                msg = 'В одной из комнат ХРАМА Вам предстоит отыскать таинственную статуэтку некоего Божества, чтобы восстановить светлость разума и выбраться из оков глубин...\nДля перемещения по комнатам ХРАМА пользуйтесь предложенными кнопками.\nУправление осуществляется стандартными клавишами (TAB / ENTER / SPACE / ESC) и курсором мыши.\nСкоро вы очнетесь в одной из сотен комнат внутри ХРАМА...\nНажмите ENTER дважды, чтобы продолжить.'
+                msg = 'В одной из комнат ХРАМА Вам предстоит отыскать таинственную статуэтку некоего Божества, чтобы выбраться из оков глубин...\nДля перемещения по комнатам ХРАМА пользуйтесь предложенными кнопками.\nУправление осуществляется стандартными клавишами (TAB / ENTER / SPACE / ESC и W / A / S / D) и мышью. Вы можете открыть меню нажав CTRL + X.\nСкоро вы очнетесь в одной из сотен комнат внутри ХРАМА...\nНажмите ENTER дважды, чтобы продолжить.'
                 npyscreen.notify_confirm(msg, title=' КОНЕЦ ПРОЛОГА ', form_color='WARNING')
 
-            self.speaker.value = Speaker.text_for_storytel(str('    ' + GameForm.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['map']), 127)
+            self.speaker.value = Speaker.text_for_storytel(str('    ' + self.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['map']), 127)
             self.speaker.display()
 
             self.quest_bar.value = Speaker.text_for_storytel('Продолжайте исследования...', 27)
             self.quest_bar.display()
 
+            self.action_forward.name = '(W) В П Е Р Е Д'
             self.action_forward.when_pressed_function = (lambda eventHadled=None: self.move('up'))
+            self.action_backward.name = '(S) Н А З А Д  '
             self.action_backward.when_pressed_function = (lambda eventHandled=None: self.move('down'))
             self.action_left.when_pressed_function = (lambda eventHandled=None: self.move('left'))
             self.action_right.when_pressed_function = (lambda eventHandled=None: self.move('right'))
@@ -630,7 +667,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         Вывод предыдущего кадра пролога.
         """
 
-        if self.frame > 0:
+        if 0 < self.frame < 4:
             self.frame -= 1
             if not self.frame:
                 keyboard.send('shift+tab')
@@ -647,7 +684,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         """
 
         self.hero.move(key_word)
-        self.speaker.value = Speaker.text_for_storytel(description_output(self.hero, GameForm.map_of_world), 127)
+        self.speaker.value = Speaker.text_for_storytel(description_output(self.hero, self.map_of_world, self.quests_dict), 127)
         self.speaker.display()
 
         self.mind.value = self.hero.mind
@@ -712,9 +749,9 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         self.loc_items.display()
 
         self.slots_loc = []  # Список кортежей ('ПРЕДМЕТ', кол-во) для предметов на каждой локации
-        for k, v in GameForm.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['items'].items():
+        for k, v in self.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['items'].items():
             if v >= 1:
-                self.slots_loc.append((k, GameForm.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['items'][k]))
+                self.slots_loc.append((k, self.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['items'][k]))
 
         if self.slots_loc:
             self.loc_items.values = [(GameForm.slots_alias[self.slots_loc[i][0]] + '  ×' + str(self.slots_loc[i][1])) for i in range(len(self.slots_loc))]
@@ -734,7 +771,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
                 elif self.slots_loc[i][0] == 'figure' and not self.FIGURE_FLAG:
                     msg = 'На своем пути вы нашли манящуюю статуэтку.\nКто знает, может быть она и есть ваше спасение?..\n|\n|\n|\n|\nДля продолжения нажмите ENTER'
                     self.FIGURE_FLAG = 1
-                    npyscreen.notify_confirm(msg, title=' НОВЫЙ ПРЕДМЕТ ', editw=1, form_color='GOOD')
+                    npyscreen.notify_confirm(msg, title=' НОВЫЙ СЮЖЕТНЫЙ ПРЕДМЕТ ', editw=1, form_color='GOOD')
                 elif self.slots_loc[i][0] == 'dust' and not self.DUST_FLAG:
                     msg = 'Черт возьми, что это?...\nВы нашли загадочный сосуд непередаваемого цвета.\nКажется внутри осталась какая-то едва ли сверкающая пыль. Или чей-то прах?..\nМожет быть с ее помощью удастся прочесть ту надпись на стене?\nИспользуйте его по назначению.\nДля продолжения нажмите ENTER'
                     self.DUST_FLAG = 1
@@ -772,7 +809,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
                     self.inventory.footer = f' С Л О Т О В : {len(self.inventory.values)} / 5 '
 
                 keyboard.send('tab')
-                GameForm.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['items'][collected_item[0]] = 0
+                self.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['items'][collected_item[0]] = 0
                 self.loc_items.values.pop(index)
                 self.loc_items.value = []
                 self.items_finder()
@@ -835,6 +872,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
 
         if self.hero.mind < 95 and random.randint(0, 100) > 90:
             self.word_and_ans = word_make()
+
             self.speaker.value += str("\n    Голоса в голове без остановки повторяют " + self.word_and_ans[1] + '.')
             self.speaker.display()
 
@@ -944,32 +982,60 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
             if 'Л Ю М Е Н' in selected_item:
                 msg = 'Этот предмет нельзя никак использовать.\nОн обладает пассивной способностью.\n|\n|\n|\nДля продолжения нажмите ENTER'
                 npyscreen.notify_confirm(msg, title=' НИЧЕГО НЕ ВЫБРАНО ', editw=1, form_color='WARNING')
+                self.inventory.value = []
+                self.inventory.display()
             if 'П Р А Х' in selected_item:
-                if result := quests.wall_quest_completion(self.hero):
-                    GameForm.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['wall'] = 0
+                if result := quests.wall_quest_completion(self.hero, self.quests_dict):
+                    self.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['wall'] = 0
+                    self.inventory_updater()
+                    self.quest_updater()
                     msg = 'Благодаря размазанному праху, стала виднеться надпись: "Статуэтка дарует сон великому злу".\n|\n|\n|\n|\nДля продолжения нажмите ENTER'
                     npyscreen.notify_confirm(msg, title=' ЗАДАНИЕ ВЫПОЛНЕНО ', editw=1, form_color='GOOD')
-                    self.inventory_updater()
-                    self.quest_updater()
+                    self.inventory.value = []
+                    self.inventory.display()
                 else:
                     msg = 'Вы не можете использовать это здесь.\nСледуйте сюжетным заданиям.\n|\n|\n|\nДля продолжения нажмите ENTER'
                     npyscreen.notify_confirm(msg, title=' НЕЛЬЗЯ ВОСПОЛЬЗОВАТЬСЯ ', editw=1, form_color='WARNING')
+                    self.inventory.value = []
+                    self.inventory.display()
             if 'С Т А Т У Я' in selected_item:
-                if result := quests.statue_quest_completion(self.hero):
-                    GameForm.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['statue'] = 0
-                    msg = 'Установленная на место статуя начинает светиться.\nВаш рассудок крепчает.\nТьма, окутывавшая вас отступает.\nДалее - ЭПИЛОГ.\n|\nДля продолжения нажмите ENTER'
-                    # TODO эпилог
-                    npyscreen.notify_confirm(msg, title=' ЗАДАНИЕ ВЫПОЛНЕНО ', editw=1, form_color='GOOD')
+                if result := quests.statue_quest_completion(self.hero, self.quests_dict):
                     self.inventory_updater()
                     self.quest_updater()
+
                     self.mind.value = self.hero.mind
                     self.mind.display()
+                    for i in range(100):
+                        self.hero.mind -= 1
+                        self.mind.value = self.hero.mind
+                        time.sleep(0.01)
+                        self.mind.display()
+
+                    self.map_of_world[self.hero.coordinates[0]][self.hero.coordinates[1]]['statue'] = 0
+                    msg = 'Установленная на место статуя начинает светиться.\nВаш рассудок крепчает.\nТьма, окутывавшая вас отступает.\nИли...\nЧТО ПРОИСХОДИТ!?\nДля продолжения нажмите ENTER'
+                    npyscreen.notify_confirm(msg, title=' ЗАДАНИЕ ВЫПОЛНЕНО ', editw=1, form_color='GOOD')
+                    [keyboard.send('shift+tab') for _ in range(10)]
+                    self.inventory.value = []
+                    self.inventory.display()
+
+                    subprocess.run([sys.executable, 'outro.py'])
+
+                    SaveSystem.delete_save()
+                    self.reset()
+                    self.parentApp.registerForm('welcomeMenu', WelcomeForm())
+                    self.parentApp.switchForm('welcomeMenu')
+                    self.parentApp.removeForm('inGame')
+                    [keyboard.send('shift+tab') for _ in range(2)]
                 else:
                     msg = 'Вы не можете использовать это здесь.\nСледуйте сюжетным заданиям.\n|\n|\n|\nДля продолжения нажмите ENTER'
                     npyscreen.notify_confirm(msg, title=' НЕЛЬЗЯ ВОСПОЛЬЗОВАТЬСЯ ', editw=1, form_color='WARNING')
+                    self.inventory.value = []
+                    self.inventory.display()
         else:
             msg = 'Выберите предмет для того, чтобы использовать его.\n|\n|\n|\n|\nДля продолжения нажмите ENTER'
             npyscreen.notify_confirm(msg, title=' НИЧЕГО НЕ ВЫБРАНО ', editw=1, form_color='WARNING')
+            self.inventory.value = []
+            self.inventory.display()
 
     def lose(self):
         """
@@ -978,6 +1044,9 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
 
         msg = 'Глубины забрали Вашу душу...\nНе беспокойтесь о своей жизни. Теперь Вас НЕТ.\nСохранение будет удалено. Весь прогресс утерян.\n|\n|\n|\nНажмите ENTER, чтобы продолжить'
         npyscreen.notify_confirm(msg, title=' ВЫ ПРОИГРАЛИ ', editw=1, form_color='DANGER')
+
+        subprocess.run([sys.executable, 'lose.py'])
+
         SaveSystem.delete_save()
         self.reset()
         self.parentApp.registerForm('welcomeMenu', WelcomeForm())
@@ -998,10 +1067,10 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         self.hero.items = {"light": 0, "figure": 0, "dust": 0}
 
         GameForm.map_of_world = load_map()
+        self.quests_dict["wall"]["complete"] = False
+        self.quests_dict["statue"]["complete"] = False
 
-        self.quests_dict = dict((k, v) for k, v in quests.quests_dict.items())
-
-    def collect_data(self):  # TODO сохранение квестов
+    def collect_data(self):
         """
         Метод, создающий словарь для сохранения.
 
@@ -1009,9 +1078,10 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         """
 
         return {'hero': self.hero,
-                'map': GameForm.map_of_world,
+                'map': self.map_of_world,
                 'inventory': (self.inventory.values, self.inventory.footer),
                 'finder': self.loc_items.values,
+                'quests': self.quests_dict,
                 'flags': (self.LUMEN_FLAG, self.DUST_FLAG, self.FIGURE_FLAG, self.MIND_FLAG)}
 
     def back_to_menu_save(self):
@@ -1019,7 +1089,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         Выход в меню с сохранением.
         """
 
-        if not self.action_right.when_pressed_function:  # Проверка прохождения пролога
+        if self.frame != 5:  # Проверка прохождения пролога
             msg = 'Сохранение в прологе не доступно.\nЗакончите пролог, прежде, чем сохраняться.\n|\n|\n|\n|\nНажмите ENTER, чтобы продолжить.'
             npyscreen.notify_confirm(msg, title=' ОШИБКА СОХРАНЕНИЯ ', editw=1, form_color='DANGER')
             keyboard.send('ctrl+x')
@@ -1039,45 +1109,33 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         Выход в стартовое меню без сохранения.
         """
 
-        if self.frame == 4:
+        if self.frame == 5:
             msg = 'Вы собираетесь вернуться в меню, не сохранившись.\nВыйти в меню?'
             if npyscreen.notify_yes_no(msg, title=' ВЫХОД В МЕНЮ ', editw=1, form_color='DANGER'):
-                if SaveSystem.new_save:
-                    SaveSystem.delete_save()
-                    self.reset()
-                    self.parentApp.registerForm('welcomeMenu', WelcomeForm())
-                    self.parentApp.switchForm('welcomeMenu')
-                    self.parentApp.removeForm('inGame')
-                else:
-                    SaveSystem.f_name = None
-                    SaveSystem.loaded_data = None
-                    self.reset()
-                    self.parentApp.registerForm('welcomeMenu', WelcomeForm())
-                    self.parentApp.switchForm('welcomeMenu')
-                    self.parentApp.removeForm('inGame')
+                SaveSystem.f_name = None
+                SaveSystem.loaded_data = None
+                SaveSystem.new_save = False
+                self.reset()
+                self.parentApp.registerForm('welcomeMenu', WelcomeForm())
+                self.parentApp.switchForm('welcomeMenu')
+                self.parentApp.removeForm('inGame')
             else:
                 keyboard.send('ctrl+x')
         else:
-            if SaveSystem.new_save:
-                SaveSystem.delete_save()
-                self.reset()
-                self.parentApp.registerForm('welcomeMenu', WelcomeForm())
-                self.parentApp.switchForm('welcomeMenu')
-                self.parentApp.removeForm('inGame')
-            else:
-                SaveSystem.f_name = None
-                SaveSystem.loaded_data = None
-                self.reset()
-                self.parentApp.registerForm('welcomeMenu', WelcomeForm())
-                self.parentApp.switchForm('welcomeMenu')
-                self.parentApp.removeForm('inGame')
+            SaveSystem.f_name = None
+            SaveSystem.loaded_data = None
+            SaveSystem.new_save = False
+            self.reset()
+            self.parentApp.registerForm('welcomeMenu', WelcomeForm())
+            self.parentApp.switchForm('welcomeMenu')
+            self.parentApp.removeForm('inGame')
 
     def exit_save(self):
         """
         Выход с сохранением из меню.
         """
 
-        if not self.action_right.when_pressed_function:
+        if self.frame != 5:
             msg = 'Сохранение в прологе не доступно.\nЗакончите пролог, прежде, чем сохраняться.\n|\n|\n|\n|\nНажмите ENTER, чтобы продолжить.'
             npyscreen.notify_confirm(msg, title=' ОШИБКА СОХРАНЕНИЯ ', editw=1, form_color='DANGER')
             keyboard.send('ctrl+x')
@@ -1089,33 +1147,22 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
             else:
                 keyboard.send('ctrl+X')
 
-    def exit_no_save(self, eventHandled=None):
+    @classmethod
+    def exit_no_save(cls, eventHandled=None):
         """
         Выход без сохранения из меню.
         """
 
-        if self.action_right.when_pressed_function:
+        if cls.frame == 4:
             msg = 'Вы собираетесь покинуть игру, не сохранившись.\nВыход из ХРАМА совсем не означает Ваше спасение...\nВыйти?'
             if npyscreen.notify_yes_no(msg, title=' ВЫХОД ', editw=1, form_color='DANGER'):
-                if SaveSystem.new_save:
-                    SaveSystem.delete_save()
-                    exit(0)
-                else:
-                    SaveSystem.f_name = None
-                    SaveSystem.loaded_data = None
-                    exit(0)
+                exit(0)
             else:
                 keyboard.send('ctrl+x')
         else:
             msg = 'Выход из ХРАМА совсем не означает Ваше спасение...\nВыйти?'
             if npyscreen.notify_yes_no(msg, title=' ВЫХОД ', editw=1, form_color='DANGER'):
-                if SaveSystem.new_save:
-                    SaveSystem.delete_save()
-                    exit(0)
-                else:
-                    SaveSystem.f_name = None
-                    SaveSystem.loaded_data = None
-                    exit(0)
+                exit(0)
             else:
                 keyboard.send('ctrl+X')
 
