@@ -3,9 +3,7 @@
 ![](https://img.shields.io/github/watchers/shasoka/prac_6?style=social)
 ![](https://img.shields.io/github/stars/shasoka/txtrpg?style=social)
 ![](https://img.shields.io/github/forks/shasoka/txtrpg?style=social)
-____
 ![](https://sun9-33.userapi.com/impg/qdGjdhrG1rhLv02cTp6t5d-knroo7XH7-wMptA/LRzrBPH5oPc.jpg?size=874x366&quality=96&sign=b05482426147994f6c295c02cc5cfbf8&type=album)
-___
 
 ## **1. Структура проекта**
 
@@ -14,22 +12,22 @@ ___
 ----...\
 	|
     |----Description_generator\  # Генератор описаний (нейронная сеть)
-	|    |----__init__.py
+    |    |----__init__.py
     |    |----char_to_idx.pickle
     |    |----entire_model.pt
     |    |----idx_to_char.pickle
     |    |----text.txt
     |    |----text_generator.py
     |    |----ХРАМ.txt
-	|
+    |
     |----Map_generator\  # Генератор карты
-	|    |----__init__.py
+    |    |----__init__.py
     |    |----map.json
     |    |----map_generator.py
-	|
+    |
     |----TUI\  # Текстовый пользовательский интерфейс
-	|    |----saves\
-	|    |----__init__.py
+    |    |----saves\
+    |    |----__init__.py
     |    |----__main__.py  # Точка входа
     |    |----intro.py
     |    |----lose.py
@@ -38,13 +36,12 @@ ___
     |    |----outro.py
     |    |----quests.py
     |    |----words.py
-	|    |----helpstr.json
-	|    |----intro.json
+    |    |----helpstr.json
+    |    |----intro.json
     |    |----intro.jpg
     |    |----lose.jpg
     |    |----outro.jpg
 ```
-___
 ## **2. Об этой игре**
 
 :game_die: Текстовая РПГ по мотивам мастера ужасов Говарда Лавкрафта :skull:
@@ -78,42 +75,42 @@ ___
 >*Более подробно о каждом предмете Вы узнаете в процессе игры.*
 
 #### **:file_folder: 5. Сохранения** доступны в главном меню. Всего имеется 5 ячеек для сохранения прогресса. Уникальных локаций довольно много и все они разбросаны случайным образом. Порой прохождение может занять у Вас довольно много времени, поэтому не лишним будет сохраниться!
-___
+
 ## **3. Галерея скриншотов**
 **Кадр из приветственного интро**
 ![](https://sun9-67.userapi.com/s/v1/if2/fuA4l5NgqWnZoCjvgZIumv2xOqT8MTN_7HxJtr8FN5psTlabRzNr4AvRITlGl81MdmvQiw7K2zMqjUMF0kbYGcjg.jpg?size=1894x987&quality=96&type=album)
-____
+
 **Главное меню**
 ![](https://sun9-59.userapi.com/s/v1/if2/eQHHwjmtTJRvSh37m5-HhGZln-J1hJoPPC6xm7d3gB8ddZqj9qv_BssX9n6PSUhm8_zGXVs4Gb6JuQGpgvSOemrw.jpg?size=1919x1006&quality=96&type=album)
-___
+
 **Игровая справка**
 ![](https://sun9-52.userapi.com/s/v1/if2/cqOp_gJKq5dlEAoqnWBvcid1iXybBcfh6-LQ-bXoDoh2B2GHgT3gp7uS7b_8yfCFp2i4ufKRNfpbvAclpoiV5Bxd.jpg?size=1919x1009&quality=96&type=album)
-___
+
 **Меню загрузки**
 ![](https://sun9-34.userapi.com/s/v1/if2/c0PW7bbwqbmPI7UObVGCz1MOunG1j-WWdSQ8avmKeOHCgcCRYe2on74l_AaXIX8MmZJGhFLBEsq8YAen3oubLF-0.jpg?size=1919x1007&quality=96&type=album)
-___
+
 **Успешное выполнение сюжетного задания**
 ![](https://sun9-62.userapi.com/s/v1/if2/IsNWTfVRvqSb4mu8SrBMJqbtwiCEbc0Utq7MI54Y_Ap-LR1Op_aWy-9kNHhCQvzSgSl5dDQBQWzpA2gbBAko2JRZ.jpg?size=1919x1005&quality=96&type=album)
-___
+
 **Мини-игра**
 ![](https://sun9-15.userapi.com/s/v1/if2/LeVk_4z4leHQ68GgsyhB3_sT4CsA4Ci9hjgYH0uyrzSorTTP-inCYZsjsCdKFLUyzUrSk25QIt5xuYZsz9aXFTcK.jpg?size=1919x1008&quality=96&type=album)
-___
+
 **Встреча с новым предметом**
 ![](https://sun1.megafon-irkutsk.userapi.com/s/v1/if2/tYZMPwhttxF2Wkvr65_9ydY_SBjHwdVXEWD-VkeiWli9qD4bMIxIWSINyoVnSvXpUKDFC_ILrbCPVWXxpWX6jEOj.jpg?size=1919x1004&quality=96&type=album)
-___
+
 **Поражение**
 ![](https://sun9-29.userapi.com/s/v1/if2/rRWtMOp9SaDiGWRwioL0TfFFMl8kLlc3OEb_N3XTGC2Ss00C_KBT6TPJ4YAw0VS64vL9qpEfH-6v9IbCNl228MMT.jpg?size=1919x1003&quality=96&type=album)
-___
+
 **Кадр из аутро в случае проигрыша**
 ![](https://sun2.megafon-irkutsk.userapi.com/s/v1/if2/vnRuopQo7xJ4Z9jpmcMQ0BORMfGPC8ljycTGp-yjjeIA6Kmv7cCPZgSwgT4_uYW4r_gjuqTJfsGVzBIl4NOWflgG.jpg?size=1890x979&quality=96&type=album)
-___
+
 ## **4. Почему ХРАМ?**
 Вы когда-нибудь видели что-то подобное? Нет, даже не так... Вы когда-нибудь видели полноценную игру с TUI в CMD Windows, да еще и с нейронной сетью, генерирующей описания локаций!? Мы сомневаемся в этом.
 
 Однозначно ХРАМ стоит Вашего внимания. 
 
 **Увидеть это собственными глазами и потргать собственными руками такой интересный продукт - очень крутой опыт!**
-___
+
 ## **5. Что говорят кураторы**
 ### **Никита Евгеньевич**
 > Блин, круто! Очень круто. Прекрасно.
@@ -121,13 +118,13 @@ ___
 > Неплохо-неплохо. :godmode:
 ### **Дмитрий Скоробогатов**
 > Я ЖДАЛ ХРАМ ДВА ГОДА! :rage1:
-___
+
 ## **6. Системные требования и установка**
 **:computer: Кратко о системных требованиях**: ХРАМ не требователен к ресурам. Игра запуститься на любом компьютере под управлением Windows. :trollface:
 
 **:computer: Установщик еще готовится.**
-___
+
 ## **7. Разработчики**
 + **:bust_in_silhouette: Мочалов Семен. КИ21-17/1Б. (<https://vk.com/semen397>)** Ответственный за работу нейронной сети и основных игровых механик.
 + **:bust_in_silhouette: Шенберг Аркадий. КИ21-17/1Б. (<https://vk.com/shxnbxrg>)** Ответственный за текстовый интерфейс и визульную составляющую.
-___
+
