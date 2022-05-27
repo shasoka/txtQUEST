@@ -1,3 +1,5 @@
+:: Батник для запуска игры
+
 @echo off
-cd C:\Data\Education\Python\Projects\QUEST\TUI
+cd TUI
 python __main__.py

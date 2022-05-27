@@ -12,7 +12,7 @@ def load_map():
     Функция, загружающая карту из файла.
     """
 
-    with open("../Map_generator/map.json", "r", encoding="UTF-8") as f:
+    with open("../MAP/map.json", "r", encoding="UTF-8") as f:
         loaded_map = json.load(f)
     return loaded_map
 
