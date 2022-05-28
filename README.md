@@ -13,27 +13,27 @@
     |
     |----MAP\  # Генератор карты
     |    |----AI\  # Генератор описаний (нейронная сеть)
-    |         |----__init__.py
-    |         |----text_generator.py
-    |         |----data    
-    |              |----char_to_idx.pickle
-    |              |----entire_model.pt
-    |              |----idx_to_char.pickle
-    |              |----text.txt
+    |    |    |----__init__.py
+    |    |    |----text_generator.py
+    |    |    |----data    
+    |    |    |    |----char_to_idx.pickle
+    |    |    |    |----entire_model.pt
+    |    |    |    |----idx_to_char.pickle
+    |    |    |    |----text.txt
     |	 |----__init__.py
     |    |----map_generator.py
     |    |----data
-    |         |----map.json
+    |    |    |----map.json
     |
     |----TUI\  # Текстовый пользовательский интерфейс
     |    |----saves\
-    |         |----.gitkeep
+    |    |    |----.gitkeep
     |    |----data\
-    |         |----helpstr.json
-    |         |----intro.json
-    |         |----intro.jpg
-    |         |----lose.jpg
-    |         |----outro.jpg
+    |    |    |----helpstr.json
+    |    |    |----intro.json
+    |    |    |----intro.jpg
+    |    |    |----lose.jpg
+    |    |    |----outro.jpg
     |    |----__init__.py
     |    |----__main__.py  # Точка входа
     |    |----intro.py
