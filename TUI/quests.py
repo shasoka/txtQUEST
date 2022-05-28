@@ -2,7 +2,7 @@
 Модуль квестов игры.
 """
 
-from main_hero_class import MainHero
+from TUI.main_hero_class import MainHero
 
 
 def wall_quest_meeting(hero, current_dict):

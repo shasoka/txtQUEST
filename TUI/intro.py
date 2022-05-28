@@ -11,6 +11,8 @@ from asciimatics.renderers import ImageFile
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen, KeyboardEvent, StopApplication
 
+from TUI.__main__ import SaveSystem
+
 
 def stop_key(event):
     """
@@ -43,7 +45,7 @@ def main_scr(screen):
     effects = [
         Print(
             screen,
-            ImageFile("intro.jpg", height=40),
+            ImageFile(f"{SaveSystem.CWD}/data/intro.jpg", height=40),
             screen.height // 2 - 20),
         Wipe(screen),
         Snow(screen),

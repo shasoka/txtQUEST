@@ -5,6 +5,7 @@
 import numpy
 import torch
 import pickle
+
 from collections import Counter
 
 
@@ -23,7 +24,6 @@ def sequence_create(raw_text):
     counts_of_chars = Counter(raw_text)
     counts_of_chars = sorted(counts_of_chars.items(), key=lambda x: x[1], reverse=True)
     sorted_chars = [char for char, _ in counts_of_chars]
-    # print(sorted_chars)
     char_int = {char: index for index, char in enumerate(sorted_chars)}
     int_char = {v: k for k, v in char_int.items()}
     sequence_of_chars = numpy.array([char_int[char] for char in raw_text])
@@ -134,59 +134,3 @@ class LTSM(torch.nn.Module):
 
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-if __name__ == "__main__":
-    continue_flag = 1
-    with open("text.txt") as file:
-        text = file.readlines()
-    text = ' '.join(text)
-
-    sequence, char_to_int, int_to_char = sequence_create(text)
-    print(len(sequence))
-
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    model = LTSM(input_size=len(int_to_char), hidden_size=300, embedding_size=128, n_layers=2)
-    model.to(device)
-
-    criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, amsgrad=True)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        patience=5,
-        verbose=True,
-        factor=0.5
-    )
-
-    loss_avg = []
-    while continue_flag == 1:
-        model.train()
-        train, target = get_batch(sequence)
-        train = train.permute(1, 0, 2).to(device)
-        target = target.permute(1, 0, 2).to(device)
-        hidden = model.init_hidden(BATCH_SIZE)
-
-        output, hidden = model(train, hidden)
-        loss = criterion(output.permute(1, 2, 0), target.squeeze(-1).permute(1, 0))
-
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-
-        loss_avg.append(loss.item())
-        if len(loss_avg) >= 50:
-            mean_loss = numpy.mean(loss_avg)
-            print(f'Loss: {mean_loss}')
-            scheduler.step(mean_loss)
-            loss_avg = []
-            model.eval()
-            predicted_text = text_generating(model, char_to_int, int_to_char)
-            print(predicted_text)
-            print("Продолжить?")
-            continue_flag = int(input())
-    torch.save(model.state_dict(), 'entire_model.pt')
-
-    with open('char_to_idx.pickle', 'wb') as f:
-        pickle.dump(char_to_int, f)
-
-    with open('idx_to_char.pickle', 'wb') as f:
-        pickle.dump(int_to_char, f)

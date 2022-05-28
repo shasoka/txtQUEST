@@ -21,10 +21,12 @@ import mouse
 import npyscreen
 import py_win_keyboard_layout
 
-import main_hero_class
-import quests
-from map_output import load_map, description_output
-from words import word_guess, word_make
+from TUI import main_hero_class as main_hero_class
+from TUI import quests as quests
+from TUI.map_output import load_map as load_map
+from TUI.map_output import description_output as description_output
+from TUI.words import word_guess as word_guess
+from TUI.words import word_make as word_make
 
 
 class App(npyscreen.StandardApp):
@@ -55,7 +57,7 @@ class MapLoaderThread:
         Метод, запускающий новый процесс.
         """
 
-        cls.CURRENT_PROCCESS = subprocess.Popen([sys.executable, '../MAP/map_generator.py'])
+        cls.CURRENT_PROCCESS = subprocess.Popen([sys.executable, f'{SaveSystem.CWD[:-4]}/MAP/map_generator.py'])
         cls.TIMER = time.time()
 
     @classmethod
@@ -90,6 +92,7 @@ class SaveSystem:
     - Удаляет сейв в случае ненадобности
     """
 
+    CWD = str(os.path.abspath(__file__))[:-12]
     f_name = None
     new_save = False
     loaded_data = None
@@ -109,7 +112,7 @@ class SaveSystem:
         Сохранение в имеющийся файл.
         """
 
-        with open(fr'saves\{cls.f_name}', 'wb') as f:
+        with open(fr'{SaveSystem.CWD}/saves/{cls.f_name}', 'wb') as f:
             pickle.dump(data, f)
         cls.f_name = None
         if cls.new_save:
@@ -122,7 +125,7 @@ class SaveSystem:
         """
 
         if not cls.new_save:
-            os.remove(fr'saves/{cls.f_name}')
+            os.remove(fr'{SaveSystem.CWD}/saves/{cls.f_name}')
             cls.f_name = None
             cls.new_save = False
 
@@ -134,7 +137,7 @@ class SaveSystem:
 
         cls.f_name = f_name + '.dat'
         cls.new_save = False
-        with open(fr'saves\{cls.f_name}', 'rb') as f:
+        with open(fr'{SaveSystem.CWD}/saves/{cls.f_name}', 'rb') as f:
             cls.loaded_data = pickle.load(f)
 
 
@@ -161,7 +164,8 @@ class Picker(npyscreen.BoxTitle):
         Метод, состовляющий список сохранений
         """
 
-        saves = sorted(os.listdir('saves'), reverse=True)
+        saves = sorted(os.listdir(f'{SaveSystem.CWD}/saves'), reverse=True)
+        saves.pop(len(saves) - 1)
         i = 0
         while i < 5:
             if i < len(saves):
@@ -208,7 +212,7 @@ class WelcomeForm(npyscreen.FormBaseNew):
     Класс основной формы.
     """
 
-    with open('helpstr.json', 'r') as file:
+    with open(f'{SaveSystem.CWD}/data/helpstr.json', 'r') as file:
         helpstr = json.load(file)
 
     def __init__(self, name=' Х Р А М ', parentApp=App, framed=None,
@@ -292,13 +296,12 @@ class WelcomeForm(npyscreen.FormBaseNew):
                 MapLoaderThread.new_proccess()
             # Иначе даем текущему процессу завершиться
             SaveSystem.create_fname()
-            GameForm.map_of_world = load_map()  # Загрузка актуальной версии карты
             self.parentApp.registerForm('inGame', GameForm())
             self.parentApp.switchForm('inGame')
             self.parentApp.removeForm('welcomeMenu')
             return
 
-        if len(os.listdir('saves')) < 5 and not self.NEW_GAME_FLAG:
+        if len(os.listdir(f'{SaveSystem.CWD}/saves')) < 6 and not self.NEW_GAME_FLAG:
             if MapLoaderThread.check_status() is None:  # Если процесс генерации не завершен
                 if (time_left := 34 - int((time.time() - MapLoaderThread.TIMER))) < 0:
                     time_left = 0
@@ -521,7 +524,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
     FIGURE_FLAG = 0
     MIND_FLAG = 0
 
-    with open("intro.json", "r") as file:
+    with open(f"{SaveSystem.CWD}/data/intro.json", "r") as file:
         full_intro = json.load(file)
 
     def __init__(self, name=' Х Р А М ', parentApp=App, framed=None,
@@ -635,6 +638,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         self.add(npyscreen.Textfield, value='(release v1.0)', rely=y - 3, editable=False)
 
         if SaveSystem.new_save:  # Шаблон для новой игры
+            GameForm.map_of_world = load_map()  # Загрузка актуальной версии карты
             self.speaker.value = Speaker.text_for_storytel(GameForm.full_intro[self.frame], 127)
             self.quest_bar.value = Speaker.text_for_storytel('Задания появятся после прохождения пролога.', 27)
             self.action_forward.when_pressed_function = self.prologue_next_frame
@@ -1116,7 +1120,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
                     npyscreen.notify_confirm(msg, title=' ЗАДАНИЕ ВЫПОЛНЕНО ', editw=1, form_color='GOOD')
                     [keyboard.send('shift+tab') for _ in range(10)]
 
-                    subprocess.run([sys.executable, 'outro.py'])
+                    subprocess.run([sys.executable, f'{SaveSystem.CWD}\outro.py'])
 
                     SaveSystem.delete_save()
                     self.reset()
@@ -1143,7 +1147,7 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
         msg = 'Глубины забрали Вашу душу...\nНе беспокойтесь о своей жизни. Теперь Вас НЕТ.\nСохранение будет удалено. Весь прогресс утерян.\n|\n|\n|\nНажмите ENTER, чтобы продолжить'
         npyscreen.notify_confirm(msg, title=' ВЫ ПРОИГРАЛИ ', editw=1, form_color='DANGER')
 
-        subprocess.run([sys.executable, 'lose.py'])
+        subprocess.run([sys.executable, f'{SaveSystem.CWD}\lose.py'])
 
         SaveSystem.delete_save()
         self.reset()
@@ -1272,7 +1276,11 @@ class GameForm(npyscreen.FormBaseNewWithMenus):
                 keyboard.send('ctrl+X')
 
 
-if __name__ == '__main__':
+def main():
+    """
+    Функция, для запуска игры из cmd по команде temple!
+    Прежде являлась точкой входа.
+    """
 
     sys.path.append('path')
 
@@ -1284,7 +1292,7 @@ if __name__ == '__main__':
     py_win_keyboard_layout.change_foreground_window_keyboard_layout(0x04190419)  # 0x04090409 - английский язык
     mouse.move(1500, 780)
 
-    subprocess.run([sys.executable, 'intro.py'])
+    subprocess.run([sys.executable, f'{SaveSystem.CWD}\intro.py'])
 
     MainGameLoop = App()
     MainGameLoop.run()

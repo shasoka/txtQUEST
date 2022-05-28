@@ -9,6 +9,8 @@ import torch
 import pickle
 import random
 import json
+import os
+
 from AI.text_generator import text_generating
 from AI.text_generator import LTSM
 
@@ -16,12 +18,12 @@ if __name__ == '__main__':
 
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    with open('../MAP/AI/char_to_idx.pickle', 'rb') as f:  # Загрузка модели и данных для генерации текста
+    with open(f'{str(os.path.abspath(__file__))[:-20]}/MAP/AI/data/char_to_idx.pickle', 'rb') as f:  # Загрузка модели и данных для генерации текста
         char_to_int = pickle.load(f)
-    with open('../MAP/AI/idx_to_char.pickle', 'rb') as f:
+    with open(f'{str(os.path.abspath(__file__))[:-20]}/MAP/AI/data/idx_to_char.pickle', 'rb') as f:
         int_to_char = pickle.load(f)
     model = LTSM(input_size=len(int_to_char), hidden_size=300, embedding_size=128, n_layers=2)
-    model.load_state_dict(torch.load("../MAP/AI/entire_model.pt"))
+    model.load_state_dict(torch.load(f"{str(os.path.abspath(__file__))[:-20]}/MAP/AI/data/entire_model.pt"))
 
     alphabet = "абвгдежзийклмнопрстуфхцчшщыэюя"  # Начала строк для генерации текста
     map_of_world = []  # Словарь для описаний локаций по координатам
@@ -51,5 +53,5 @@ if __name__ == '__main__':
     map_of_world[5][4]["statue"] = 1
     map_of_world[5][1]["wall"] = 1
 
-    with open("../MAP/map.json", 'w') as file:  # Сохранение в формате json
+    with open(f"{str(os.path.abspath(__file__))[:-20]}/MAP/data/map.json", 'w') as file:  # Сохранение в формате json
         json.dump(map_of_world, file)
