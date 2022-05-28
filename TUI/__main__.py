@@ -422,7 +422,7 @@ class WelcomeForm(npyscreen.FormBaseNew):
             npyscreen.utilNotify.YesNoPopup.OK_BUTTON_TEXT = 'Да'
             npyscreen.utilNotify.YesNoPopup.CANCEL_BUTTON_TEXT = 'Нет'
             if npyscreen.notify_yes_no(msg, title=' УДАЛЕНИЕ СОХРАНЕНИЯ ', editw=1, form_color='DANGER'):
-                os.remove(f'saves/{self.saves_picker.values[file_to_delete[0]]}.dat')
+                os.remove(fr'{SaveSystem.CWD}/saves/{self.saves_picker.values[file_to_delete[0]]}.dat')
                 saves = Picker.saves_updater()
                 self.saves_picker.values = saves
                 self.saves_picker.value = []
