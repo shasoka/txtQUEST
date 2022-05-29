@@ -1296,3 +1296,7 @@ def main():
 
     MainGameLoop = App()
     MainGameLoop.run()
+
+
+if __name__ == '__main__':
+    main()
