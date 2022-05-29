@@ -45,6 +45,8 @@ if __name__ == '__main__':
                                     })
 
     map_of_world[random.randint(0, 9)][random.randint(0, 9)]["items"]["figure"] = 1
+    map_of_world[random.randint(0, 9)][random.randint(0, 9)]["wall"] = 1
+    map_of_world[random.randint(0, 9)][random.randint(0, 9)]["statue"] = 1
 
     with open(f"{str(os.path.abspath(__file__))[:-20]}/MAP/data/map.json", 'w') as file:  # Сохранение в формате json
         json.dump(map_of_world, file)

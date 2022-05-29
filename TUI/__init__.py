@@ -12,4 +12,4 @@ FINAL RELEASE VERSION
     - quests.py: модуль с сюжетными квестами.
 """
 
-__version__ = '1.5'
+__version__ = '1.7'
