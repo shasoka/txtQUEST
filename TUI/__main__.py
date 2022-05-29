@@ -1284,7 +1284,7 @@ def main():
 
     sys.path.append('path')
 
-    windll.kernel32.SetConsoleTitleW(" X P A M ")
+    windll.kernel32.SetConsoleTitleW("XPAM")
 
     window_x = (windll.user32.GetSystemMetrics(0)) // 5
     window_y = (windll.user32.GetSystemMetrics(1)) // 5

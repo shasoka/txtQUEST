@@ -48,8 +48,5 @@ def main_scr(screen):
 
 
 if __name__ == '__main__':
-    x = (windll.user32.GetSystemMetrics(0)) // 5
-    y = (windll.user32.GetSystemMetrics(1)) // 5
-    os.system('mode con cols=' + str(x) + ' lines=' + str(y))
 
     Screen.wrapper(main_scr)

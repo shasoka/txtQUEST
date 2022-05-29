@@ -4,7 +4,6 @@
 
 import numpy
 import torch
-import pickle
 
 from collections import Counter
 
