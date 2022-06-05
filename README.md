@@ -174,7 +174,7 @@
 
 **Готово! Добро пожаловать в ХРАМ!**
 
-![](https://media.giphy.com/media/jKn6YLna9uF846ocGH/giphy.gif)
+![](https://media.giphy.com/media/5KZTxiscXF07no6ywN/giphy.gif)
 
 ## **7. Разработчики**
 + **:bust_in_silhouette: Мочалов Семен. КИ21-17/1Б. (<https://vk.com/semen397>)** Ответственный за работу нейронной сети и основных игровых механик.
